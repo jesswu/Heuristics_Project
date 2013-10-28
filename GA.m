@@ -63,7 +63,38 @@ end
 
 
 function [parent1,parent2] = selection_R(population,fit)
+%fitness based probability selection
 prob = cumsum(fit/sum(fit));
+select1 = rand();
+index1 = 0;
+for i = 1:length(population)
+if (index1==0 && select1<prob(i))
+index1 = i;
+end
+end
+parent1 = population(index1,:);
+
+index2 = index1;
+while index2==index1
+select2 = rand();
+tmp = 0;
+for i = 1:length(population)
+if (tmp==0 && select2<prob(i))
+tmp = i;
+end
+end
+index2 = tmp;
+end
+parent2 = population(index2,:);	
+end
+
+
+function [parent1,parent2] = selection_new(population,fit)
+%rank based probability selection
+[sort_fit, index] = sort(fit,'descend');
+population = population(index,:);
+prob = cumsum(index/sum(index));
+
 select1 = rand();
 index1 = 0;
 for i = 1:length(population)
