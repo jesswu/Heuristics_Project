@@ -10,6 +10,7 @@
 % Output:
 % Solutions_Tabu, which is a structure containing
 % sCur, sBest, AL, and costCur for each iteration and each simulation
+% with the format solutions(x).Sim(w).Parameters for x constraint scenarios and w simulations.  
 
 % Functions:
 % neighborhood_Tabu.m
