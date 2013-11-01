@@ -1,6 +1,6 @@
 %% tabuSAT.m
 % Written by Brandon Bass
-% Last edited: 10/24/2013
+% Last edited: 11/1/2013
 
 % Purpose: Perform Tabu Search algorithm for 3 SAT constraints in constraints.m
 
@@ -8,7 +8,7 @@
 % constraints.m
 
 % Output:
-% Solutions_Tabu, which is a structure containing 
+% Solutions_Tabu, which is a structure containing
 % sCur, sBest, AL, and costCur for each iteration and each simulation
 
 % Functions:
@@ -20,7 +20,7 @@ clc
 close all
 
 % % Generate constraints
-% constraints = load('uf200-01.txt');
+constraints = load('uf200-01.txt');
 % constraints = vertcat(constraints, load('uf200-02.txt'));
 % constraints = vertcat(constraints,load('uf200-03.txt'));
 % constraints = vertcat(constraints,load('uf200-04.txt'));
@@ -30,14 +30,14 @@ close all
 % constraints = vertcat(constraints,load('uf200-08.txt'));
 % constraints = vertcat(constraints,load('uf200-09.txt'));
 % constraints = vertcat(constraints,load('uf200-10.txt'));
-% constraints(:,4) = [];
+constraints(:,4) = [];
 % save('constraints', 'constraints');
-load constraints
+% load constraints
 
 % Parameters
 numDims = 200;
-numIter = 100;
-m = 3; % taboo retention time
+numIter = 1500;
+m = 25; % taboo retention time
 numSims = 1;
 
 % Generate xInitials
@@ -73,10 +73,10 @@ for w = 1:numSims
     ii = 2;
     while ii <= numIter
         
-        if tabuCounter == m
-            tabuCounter = 0;
-            tabuList(1) = [];
-        end
+        %         if tabuCounter == m
+        %             tabuCounter = 0;
+        %             tabuList(1) = []
+        %         end
         
         sTest = neighborhood_Tabu(sCur); % create neighborhood from sCur
         [sortedFitness, fitness_idx] = sort(costSAT(sTest, constraints), 'ascend'); % evaluate cost of neighborhood and find the best solution
@@ -84,14 +84,21 @@ for w = 1:numSims
         % check if best answers are in tabu list
         % This method finds the index that is different from sCur.  This
         % will be what is stored in tabuList
-        indexChanged = find(sTest(1,:)~= sCur);
+        indexChanged = find(sTest(fitness_idx(1),:)~= sCur);
         tabuCheck = ismember(indexChanged, tabuList);
         
         if tabuCheck == 0 % if not in tabu list
             
-            sCur = sTest(1,:); % set sCur to best value
+            sCur = sTest(fitness_idx(1),:); % set sCur to best value
             costCur = sortedFitness(1); % set costCur to best fitness
-            tabuList = vertcat(tabuList, indexChanged); % add index changed to tabuList
+            
+            tabuList(end+1,1) = indexChanged;
+%             tabuCounter = length(tabuList);
+%             if tabuCounter == m+1
+%                 %tabuCounter = 0;
+%                 tabuList(1) = [];
+%             end
+            %tabuList = vertcat(tabuList, indexChanged); % add index changed to tabuList
             
             if costCur < AL  % if costCur is better than AL
                 AL = costCur;  % update AL
@@ -103,9 +110,14 @@ for w = 1:numSims
             if sortedFitness(1) < AL % if the best fitness is better than the AL
                 % ACCEPT TABU MOVE
                 
-                sCur = sTest(1,:);
+                sCur = sTest(fitness_idx(1),:);
                 costCur = sortedFitness(1);
-                tabuList = vertcat(tabuList, indexChanged);
+                tabuList(end+1,1) = indexChanged;
+%                 tabuCounter = length(tabuList);
+%                 if tabuCounter == m+1
+%                     %tabuCounter = 0;
+%                     tabuList(1) = [];
+%                 end
                 AL = costCur;
                 sBest = sCur;
             else
@@ -113,16 +125,24 @@ for w = 1:numSims
                 % find one that is not in the tabu list
                 
                 jj = 2;
-                indexChanged = find(sTest(jj,:)~= sCur);
+                indexChanged = fitness_idx(jj);
+                %indexChanged = find(sTest(jj,:)~= sCur);
                 while (ismember(indexChanged, tabuList) == 1)
-                    jj = jj + 1;
-                    indexChanged = find(sTest(jj,:)~= sCur);
+                        jj = jj + 1;
+                        indexChanged = fitness_idx(jj);
                 end
                 
                 % Once found, update sCur, costCur, tabuList
-                sCur = sTest(jj,:);
+                sCur = sTest(indexChanged,:);
                 costCur = sortedFitness(jj);
-                tabuList = vertcat(tabuList, indexChanged);
+                
+                tabuList(end+1,1) = indexChanged;
+%                 tabuCounter = length(tabuList);
+%                 if tabuCounter == m +1
+%                     %tabuCounter = 0;
+%                     tabuList(1) = [];
+%                 end
+                %tabuList = vertcat(tabuList, indexChanged);
             end
         end
         
@@ -130,8 +150,14 @@ for w = 1:numSims
         Solutions_Tabu(w).sBest(ii,:) = sBest;
         Solutions_Tabu(w).AL(ii,1) = AL;
         Solutions_Tabu(w).costCur(ii,1) = costCur;
+        tabuCounter = length(tabuList);
+        if tabuCounter == m +1
+            %tabuCounter = 0;
+            tabuList(1) = [];
+        end
         ii = ii + 1;
-        tabuCounter = tabuCounter + 1;
+        %tabuCounter = tabuCounter + 1;
+        %fprintf('%s \n',tabuCounter)
     end
     fprintf('Simulation %g \n', w)
     
