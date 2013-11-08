@@ -1,0 +1,150 @@
+% This code generates all of our analytics, including statistical values, empirical CDFs, objective function vs evaluation plots, boxplots, and eventually hypothesis testing 
+
+close all
+clear
+clc
+
+%% Load in Solution structures
+load('solutionSA.mat');
+load('Solutions_Tabu.mat');
+load('bestCost_GA');
+GA1500iterations = load('GA1500iterations.mat'); 
+GA1500iterations = GA1500iterations.t;
+bestCostGS = load('bestCostGS.mat');
+bestCostGS = bestCostGS.bestCostGS;
+solutionGS = load('solutionGS.mat');
+solutionGS = solutionGS.solutionGS;
+
+AL_vec = [];
+for i = 1:10
+    AL_vec = [];
+    for k = 1:1500
+        for j = 1:30
+            AL_vec = vertcat(AL_vec, Solutions_Tabu(i).Sim(j).AL(k));
+        end
+        mean_ALvec = mean(AL_vec);
+        meanAL_container(k) = mean_ALvec;
+        AL_vec = [];
+    end
+    avgSolutions_Tabu(i).meanSolution = meanAL_container;
+    meanAL_container = [];
+end
+
+% variable avgSolutions_Tabu contains the average solutions over 30
+% iterations 
+
+titles = {'Best Cost for Instance 1', 'Best Cost for Instance 2', 'Best Cost for Instance 3', 'Best Cost for Instance 4', 'Best Cost for Instance 5', 'Best Cost for Instance 6', 'Best Cost for Instance 7', 'Best Cost for Instance 8', 'Best Cost for Instance 9', 'Best Cost for Instance 10'}; 
+for i = 1:10
+    figure(i)
+    hold on
+    plot(avgSolutions_Tabu(i).meanSolution)
+    plot(solution{i}(:,3), 'r')
+    plot(GA1500iterations(i,:), 'k')
+    plot(solutionGS{i}(:,3),'g')
+    i_legend=legend('Tabu', 'SA', 'GA', 'GS');
+    set(i_legend,'FontSize',16)
+    xlabel('Iteration','FontSize',16)
+    ylabel('Cost/Number of Conflicts','FontSize',16)
+    title(titles{i},'FontSize',16)
+    saveas(figure(i),titles{i},'jpg')
+end
+
+%% Box plot creation
+% We want to take the best value (last value) of every 
+load('bestCostSA.mat') % SA
+
+% Need to make a corresponding matrix for Tabu Search
+bestALvec = [];
+for i = 1:10
+    for j = 1:30
+        k = 1500;
+        bestALvec = vertcat(bestALvec, Solutions_Tabu(i).Sim(j).AL(k));
+    end
+    bestAL(:,i) = bestALvec;
+    bestALvec = [];
+end
+        
+filenames = {'boxplot1', 'boxplot2', 'boxplot3', 'boxplot4', 'boxplot5', 'boxplot6', 'boxplot7', 'boxplot8', 'boxplot9', 'boxplot10'};
+% Plot 10 boxplots of all algorithms
+for i = 1:10
+    figure(i+10)
+    set(figure(i+10),'DefaultTextFontSize',16);
+    boxplot([bestAL(:,i), bestCost(:,i), bestCost_GA(:,i), bestCostGS(:,i)], 'labels', {'Tabu', 'SA', 'GA', 'GS'})
+    ylabel('Best Cost','FontSize',16)
+    title(titles{i},'FontSize',16)
+    saveas(figure(i+10),filenames{i},'jpg')
+end
+
+
+%renaming the variables so it's more consistent
+bestCostTABU = bestAL;
+bestCostSA = bestCost;
+bestCostGA = bestCost_GA;
+
+%combining all the bestCosts into one structure
+bestCost = {bestCostSA, bestCostGS, bestCostGA, bestCostTABU};
+
+%avgBest is the average of 30 trials for each of the 10 problem sets
+avgBestSA=transpose(mean(bestCostSA(1:30,:)));
+avgBestGS=transpose(mean(bestCostGS(1:30,:)));
+avgBestTABU=transpose(mean(bestCostTABU(1:30,:)));
+avgBestGA=transpose(mean(bestCostGA(1:30,:)));
+
+%plotting the average of 30 trials for each of the 10 problem sets
+boxplot([avgBestSA, avgBestGS, avgBestTABU, avgBestGA], 'labels',{'SA', 'GS', 'Tabu', 'GA'})
+
+%column 11 is the average of 10 problem sets for all trials
+for i = 1:30
+    bestCostSA(i,11) = mean(bestCostSA(i,1:10));
+    bestCostGS(i,11) = mean(bestCostGS(i,1:10));
+    bestCostTABU(i,11) = mean(bestCostTABU(i,1:10));
+    bestCostGA(i,11) = mean(bestCostGA(i,1:10));
+end
+
+%plotting the average of 10 problem sets
+figure(22)
+boxplot([bestCostSA(1:30,11), bestCostGS(1:30,11), bestCostTABU(1:30,11), bestCostGA(1:30,11)], 'labels',{'SA', 'GS', 'Tabu', 'GA'})
+
+%descriptive statistic averaged over trials for each of the 10 problems
+%row 31= mean, row32=min, row33=max, row34=std
+%bestCost = {bestCostSA, bestCostGS, bestCostGA, bestCostTABU};
+for i=1:4
+    bestCost{i}(31,:)=mean(bestCost{i}(1:30,:));
+    bestCost{i}(32,:)=min(bestCost{i}(1:30,:));
+    bestCost{i}(33,:)=max(bestCost{i}(1:30,:));
+    bestCost{i}(34,:)=std(bestCost{i}(1:30,:));
+end
+
+% Create some sort of descriptive statistics cell
+instance = cell(1,10);
+
+for i=1:10
+    for j=1:4
+        instance{i}(:,j)=bestCost{j}(31:34,i);
+    end
+end
+
+%% Empirical CDF plots
+% Note: We are now using bestCost cell that was redefined within the code
+% We will create a cdf for each constraint instance, with the best
+% objective function value.
+colors = {'r' 'b' 'g' 'k'};
+
+for i = 1:10
+    cdfvec = [];
+    for j = 1:4
+        cdfvec = horzcat(cdfvec, bestCost{j}(1:30,i));
+    end
+    figure
+    hold on
+    for jj = 1:4 
+        ecdf(cdfvec(:,jj));
+    end
+    hold off
+     h = get(gca, 'children');
+     set(h, {'Color'} , colors');
+     legend('SA','GS', 'GA', 'Tabu');
+end
+
+    
+
