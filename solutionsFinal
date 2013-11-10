@@ -32,7 +32,7 @@ end
 
 % variable avgSolutions_Tabu contains the average solutions over 30
 % iterations 
-
+path = pwd;
 titles = {'Best Cost for Instance 1', 'Best Cost for Instance 2', 'Best Cost for Instance 3', 'Best Cost for Instance 4', 'Best Cost for Instance 5', 'Best Cost for Instance 6', 'Best Cost for Instance 7', 'Best Cost for Instance 8', 'Best Cost for Instance 9', 'Best Cost for Instance 10'}; 
 for i = 1:10
     figure(i)
@@ -46,7 +46,9 @@ for i = 1:10
     xlabel('Iteration','FontSize',16)
     ylabel('Cost/Number of Conflicts','FontSize',16)
     title(titles{i},'FontSize',16)
-    saveas(figure(i),titles{i},'jpg')
+     tempPath = [];
+     tempPath = strcat(path, '/graphs/', titles(i));
+     saveas(figure(i),tempPath{1},'jpg')
 end
 
 %% Box plot creation
@@ -66,13 +68,16 @@ end
         
 filenames = {'boxplot1', 'boxplot2', 'boxplot3', 'boxplot4', 'boxplot5', 'boxplot6', 'boxplot7', 'boxplot8', 'boxplot9', 'boxplot10'};
 % Plot 10 boxplots of all algorithms
+path = pwd;
 for i = 1:10
     figure(i+10)
     set(figure(i+10),'DefaultTextFontSize',16);
     boxplot([bestAL(:,i), bestCost(:,i), bestCost_GA(:,i), bestCostGS(:,i)], 'labels', {'Tabu', 'SA', 'GA', 'GS'})
     ylabel('Best Cost','FontSize',16)
     title(titles{i},'FontSize',16)
-    saveas(figure(i+10),filenames{i},'jpg')
+     tempPath = [];
+     tempPath = strcat(path, '/graphs/', filenames(i));
+     saveas(figure(i+10),tempPath{1},'jpg')
 end
 
 
@@ -128,8 +133,9 @@ end
 % Note: We are now using bestCost cell that was redefined within the code
 % We will create a cdf for each constraint instance, with the best
 % objective function value.
-colors = {'r' 'b' 'g' 'k'};
-
+colors = {'r' 'g' 'b' 'k'};
+path = pwd;
+filenames = {'cdfplot1', 'cdfplot2', 'cdfplot3', 'cdfplot4', 'cdfplot5', 'cdfplot6', 'cdfplot7', 'cdfplot8', 'cdfplot9', 'cdfplot10'};
 for i = 1:10
     cdfvec = [];
     for j = 1:4
@@ -144,7 +150,36 @@ for i = 1:10
      h = get(gca, 'children');
      set(h, {'Color'} , colors');
      legend('SA','GS', 'GA', 'Tabu');
+     title('Empirical CDF', 'FontSize',16)
+     tempPath = [];
+     tempPath = strcat(path, '/graphs/', filenames(i));
+     saveas(gca,tempPath{1},'jpg')
 end
 
+
+
+%% Tabu Evaluation
+% This section of code will check how many times we find a satisfiable
+% solution in Tabu search. 
+
+% initialize structure
+for i = 1:10
+    satCounter(i).numSatisfied = [];
+end
+
+%run analysis
+totalCounter = 0;
+for i = 1:10
+    counter = 0;
+    for j = 1:30
+        satTest = (Solutions_Tabu(i).Sim(j).AL(1500) == 0);
+        if satTest == 1
+            satCounter(i).numSatisfied  = counter + 1;
+            totalCounter = totalCounter + 1;
+            fprintf('Satisfiable solution in Constraint %g Simulation %g \n', i, j)
+        end
+    end
+end
+fprintf('Number of satisfiable solutions found: %g \n', totalCounter)
     
 
