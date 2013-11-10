@@ -183,3 +183,111 @@ end
 fprintf('Number of satisfiable solutions found: %g \n', totalCounter)
     
 
+
+%% Hypothesis Tests: 2 sample t-test performed on all pairwise samples of 30 trials on each instance
+htValues = [];
+algNames = {'SA_GS','SA_GA','SA_Tabu','GS_GA','GS_Tabu','GA_Tabu'};
+for i=1:10
+    %SA_GS
+    [h,p,ci,stats] = ttest2(bestCost{1}(1:30,i),bestCost{2}(1:30,i));
+    htValues(i).(algNames{1}).h = h;
+    htValues(i).(algNames{1}).p = p;
+    htValues(i).(algNames{1}).ci = ci;
+    htValues(i).(algNames{1}).stats = stats;
+    
+    %SA_GA
+    [h,p,ci,stats] = ttest2(bestCost{1}(1:30,i),bestCost{3}(1:30,i));
+    htValues(i).(algNames{2}).h = h;
+    htValues(i).(algNames{2}).p = p;
+    htValues(i).(algNames{2}).ci = ci;
+    htValues(i).(algNames{2}).stats = stats;
+    
+    %SA_Tabu
+    [h,p,ci,stats] = ttest2(bestCost{1}(1:30,i),bestCost{4}(1:30,i));
+    htValues(i).(algNames{3}).h = h;
+    htValues(i).(algNames{3}).p = p;
+    htValues(i).(algNames{3}).ci = ci;
+    htValues(i).(algNames{3}).stats = stats;
+    
+    %GS_GA
+    [h,p,ci,stats] = ttest2(bestCost{2}(1:30,i),bestCost{3}(1:30,i));
+    htValues(i).(algNames{4}).h = h;
+    htValues(i).(algNames{4}).p = p;
+    htValues(i).(algNames{4}).ci = ci;
+    htValues(i).(algNames{4}).stats = stats;
+    
+    %GS_Tabu
+    [h,p,ci,stats] = ttest2(bestCost{2}(1:30,i),bestCost{4}(1:30,i));
+    htValues(i).(algNames{5}).h = h;
+    htValues(i).(algNames{5}).p = p;
+    htValues(i).(algNames{5}).ci = ci;
+    htValues(i).(algNames{5}).stats = stats;
+    
+    %GA_Tabu
+    [h,p,ci,stats] = ttest2(bestCost{3}(1:30,i),bestCost{4}(1:30,i));
+    htValues(i).(algNames{6}).h = h;
+    htValues(i).(algNames{6}).p = p;
+    htValues(i).(algNames{6}).ci = ci;
+    htValues(i).(algNames{6}).stats = stats;
+    
+end
+ 
+
+cumHvector = zeros(1,6);
+fn = fieldnames(htValues);
+for i = 1:10
+    for j = 1:length(fn)
+        cumHvector(j) = cumHvector(j) + htValues(i).(fn{j}).h;
+    end
+end
+%Result: All of the means are different except in the case of SA and GA. Only
+%in instance 6 we reject the null hypothesis and accept the alternative
+%hypothesis that meand of SA is different from mean of GA.
+
+
+%One tailed t-tests where the alternate hypothesis is x<y
+htValuesLeft = [];
+
+for i=1:10
+    %Tabu<all
+    algNames = {'SA_Tabu','GS_Tabu','GA_Tabu','SA_GS'};
+    for j=1:3
+        [h,p,ci,stats] = ttest2(bestCost{4}(1:30,i),bestCost{j}(1:30,i),'Tail','left');  
+        htValuesLeft(i).(algNames{j}).h = h;
+        htValuesLeft(i).(algNames{j}).p = p;
+        htValuesLeft(i).(algNames{j}).ci = ci;
+        htValuesLeft(i).(algNames{j}).stats = stats;
+    end
+    
+    %SA<GS
+    [h,p,ci,stats] = ttest2(bestCost{1}(1:30,i),bestCost{2}(1:30,i),'Tail','left');
+    htValuesLeft(i).(algNames{4}).h = h;
+    htValuesLeft(i).(algNames{4}).p = p;
+    htValuesLeft(i).(algNames{4}).ci = ci;
+    htValuesLeft(i).(algNames{4}).stats = stats;
+    
+    %GA<GS
+    [h,p,ci,stats] = ttest2(bestCost{3}(1:30,i),bestCost{2}(1:30,i),'Tail','left');
+    htValuesLeft(i).GA_GS.h = h;
+    htValuesLeft(i).GA_GS.p = p;
+    htValuesLeft(i).GA_GS.ci = ci;
+    htValuesLeft(i).GA_GS.stats = stats;
+end
+
+cumHvectorLeft = zeros(1,5);
+fn = fieldnames(htValuesLeft);
+for i = 1:10
+    for j = 1:length(fn)
+        cumHvectorLeft(j) = cumHvectorLeft(j) + htValuesLeft(i).(fn{j}).h;
+    end
+end
+%Result: All of the one tail tests are rejected which means we accept the alternate
+%hypothesis.
+
+%One tail test for GA<SA in instance 6
+[h,p,ci,stats] = ttest2(bestCost{3}(1:30,6),bestCost{1}(1:30,6),'Tail','left');
+htValuesLeft(6).GA_SA.h = h;
+htValuesLeft(6).GA_SA.p = p;
+htValuesLeft(6).GA_SA.ci = ci;
+htValuesLeft(6).GA_SA.stats = stats;
+%Result: h=1 so null hypothesis is rejected GA<SA in instance 6
